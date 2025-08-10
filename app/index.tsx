@@ -8,7 +8,7 @@ import {
   useCameraPermissions,
 } from "expo-camera";
 import { Image } from "expo-image";
-import { useRef, useState } from "react";
+import React, { useRef, useState } from "react";
 import { Button, Pressable, StyleSheet, Text, View } from "react-native";
 
 export default function App() {
@@ -59,17 +59,47 @@ export default function App() {
     setFacing((prev) => (prev === "back" ? "front" : "back"));
   };
 
+  const uploadImage = async (imageUri: string) => {
+    console.log(`Trying to write ${imageUri}`);
+
+    try {
+      const response = await fetch('http://localhost:3000/upload-image', {
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/json',
+        },
+        body: JSON.stringify({
+          image: imageUri,
+        }),
+      });
+  
+      const result = await response.json();
+      console.log('Upload successful:', result);
+    } catch (error) {
+      console.error('Upload failed:', error);
+    }
+  }
+
   const renderPicture = () => {
-    return (
-      <View>
-       {uri && <Image
-          source={{ uri }}
-          contentFit="contain"
-          style={{ width: 300, aspectRatio: 1 }}
-        />}
-        <Button onPress={() => setUri(null)} title="Take another picture" />
-      </View>
-    );
+    if (uri != null) {
+      return (
+        <View>
+         <Image
+            source={{ uri }}
+            contentFit="contain"
+            style={{ width: 300, aspectRatio: 1 }}
+          />
+          <Button 
+            title="Take another picture" 
+            onPress={() => {
+              uploadImage(uri);
+              setUri(null); 
+            }}
+          />
+        </View>
+      );
+    }
+    else return
   };
 
   const renderCamera = () => {
