@@ -60,10 +60,10 @@ export default function App() {
   };
 
   const uploadImage = async (imageUri: string) => {
-    console.log(`Trying to write ${imageUri}`);
+    console.log(`Trying to write ${imageUri} to /upload-image`);
 
     try {
-      const response = await fetch('http://localhost:3000/upload-image', {
+      const response = await fetch('/upload-image', {
         method: 'POST',
         headers: {
           'Content-Type': 'application/json',
