@@ -1,8 +1,6 @@
 import AntDesign from "@expo/vector-icons/AntDesign";
-import Feather from "@expo/vector-icons/Feather";
 import FontAwesome6 from "@expo/vector-icons/FontAwesome6";
 import {
-  CameraMode,
   CameraType,
   CameraView,
   useCameraPermissions,
@@ -10,14 +8,13 @@ import {
 import { Image } from "expo-image";
 import React, { useRef, useState } from "react";
 import { Button, Pressable, StyleSheet, Text, View } from "react-native";
+import { launchImageLibrary } from 'react-native-image-picker';
 
 export default function App() {
   const [permission, requestPermission] = useCameraPermissions();
   const ref = useRef<CameraView>(null);
   const [uri, setUri] = useState<string | null>(null);
-  const [mode, setMode] = useState<CameraMode>("picture");
   const [facing, setFacing] = useState<CameraType>("back");
-  const [recording, setRecording] = useState(false);
 
   if (!permission) {
     return null;
@@ -40,19 +37,28 @@ export default function App() {
     console.log({ photo });
   };
 
-  const recordVideo = async () => {
-    if (recording) {
-      setRecording(false);
-      ref.current?.stopRecording();
-      return;
-    }
-    setRecording(true);
-    const video = await ref.current?.recordAsync();
-    console.log({ video });
-  };
+  const pickAndUploadImage = async () => {
+    try {
+      // Step 1: Let user pick an image
+      const result = await launchImageLibrary({
+        mediaType: 'photo',
+        selectionLimit: 1, // or >1 for multiple
+      });
 
-  const toggleMode = () => {
-    setMode((prev) => (prev === "picture" ? "video" : "picture"));
+      if (result.didCancel) {
+        console.log('User cancelled image picker');
+        return;
+      }
+
+      const image = result.assets?.[0];
+
+      if (image && image.uri)
+      {
+        uploadImage(image.uri)
+      }
+    } catch (error) {
+      console.error('Error picking or uploading image:', error);
+    }
   };
 
   const toggleFacing = () => {
@@ -60,10 +66,14 @@ export default function App() {
   };
 
   const uploadImage = async (imageUri: string) => {
-    console.log(`Trying to write ${imageUri} to /upload-image`);
+    const path = process.env.EXPO_PUBLIC_SERVER_URL
+      ? process.env.EXPO_PUBLIC_SERVER_URL + '/upload-image'
+      : '/upload-image';
+
+    console.log(`Trying to write to ${path}:\n ${imageUri}`);
 
     try {
-      const response = await fetch('/upload-image', {
+      const response = await fetch(path, {
         method: 'POST',
         headers: {
           'Content-Type': 'application/json',
@@ -89,13 +99,21 @@ export default function App() {
             contentFit="contain"
             style={{ width: 300, aspectRatio: 1 }}
           />
-          <Button 
-            title="Take another picture" 
-            onPress={() => {
-              uploadImage(uri);
-              setUri(null); 
-            }}
-          />
+          <View style={styles.container}>
+            <Button 
+              title="Delete" 
+              onPress={() => {
+                setUri(null); 
+              }}
+            />
+            <Button 
+              title="Upload" 
+              onPress={() => {
+                uploadImage(uri);
+                setUri(null); 
+              }}
+            />
+          </View>       
         </View>
       );
     }
@@ -107,20 +125,16 @@ export default function App() {
       <CameraView
         style={styles.camera}
         ref={ref}
-        mode={mode}
+        mode={"picture"}
         facing={facing}
         mute={false}
         responsiveOrientationWhenOrientationLocked
       >
         <View style={styles.shutterContainer}>
-          <Pressable onPress={toggleMode}>
-            {mode === "picture" ? (
-              <AntDesign name="picture" size={32} color="white" />
-            ) : (
-              <Feather name="video" size={32} color="white" />
-            )}
+          <Pressable onPress={pickAndUploadImage}>
+            <AntDesign name="picture" size={32} color="white" />
           </Pressable>
-          <Pressable onPress={mode === "picture" ? takePicture : recordVideo}>
+          <Pressable onPress={takePicture}>
             {({ pressed }) => (
               <View
                 style={[
@@ -133,9 +147,7 @@ export default function App() {
                 <View
                   style={[
                     styles.shutterBtnInner,
-                    {
-                      backgroundColor: mode === "picture" ? "white" : "red",
-                    },
+                    { backgroundColor:"white" },
                   ]}
                 />
               </View>
