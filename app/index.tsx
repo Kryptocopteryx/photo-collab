@@ -1,4 +1,5 @@
 import AntDesign from "@expo/vector-icons/AntDesign";
+import Feather from "@expo/vector-icons/Feather";
 import FontAwesome6 from "@expo/vector-icons/FontAwesome6";
 import {
   CameraType,
@@ -23,10 +24,15 @@ export default function App() {
   if (!permission.granted) {
     return (
       <View style={styles.container}>
-        <Text style={{ textAlign: "center" }}>
-          We need your permission to use the camera
+        <Text style={{ 
+          textAlign: "center",
+          color: "#AEEFE1",
+          fontSize: 16,
+          marginBottom: 5
+        }}>
+          Photo-Collab benötigt deine Erlaubnis, die Kamera zu verwenden
         </Text>
-        <Button onPress={requestPermission} title="Grant permission" />
+        <Button onPress={requestPermission} title="Zugriff erlauben" />
       </View>
     );
   }
@@ -65,11 +71,15 @@ export default function App() {
     setFacing((prev) => (prev === "back" ? "front" : "back"));
   };
 
-  const uploadImage = async (imageUri: string) => {
-    const path = process.env.EXPO_PUBLIC_SERVER_URL
-      ? process.env.EXPO_PUBLIC_SERVER_URL + '/upload-image'
-      : '/upload-image';
+  const saveImage = async (imageUri: string) => {
+    const link = document.createElement('a');
+    link.href = imageUri;
+    link.download = 'photo.jpg';
+    link.click();
+  }
 
+  const uploadImage = async (imageUri: string) => {
+    const path = '/upload-image';
     console.log(`Trying to write to ${path}:\n ${imageUri}`);
 
     try {
@@ -93,26 +103,35 @@ export default function App() {
   const renderPicture = () => {
     if (uri != null) {
       return (
-        <View>
+        <View style={{ 
+          width: "100%",
+          justifyContent: "center",
+          alignItems: "center"
+        }}>
          <Image
             source={{ uri }}
             contentFit="contain"
-            style={{ width: 300, aspectRatio: 1 }}
+            style={{ 
+              width: "90%", 
+              aspectRatio: 1,
+            }}
           />
-          <View style={styles.container}>
-            <Button 
-              title="Delete" 
+          <View style={{
+            width: "80%",
+            flexDirection: "row",
+            justifyContent: "space-between",
+          }}>
+            <Pressable onPress={() => { setUri(null); }}>
+              <Feather name="trash-2" size={32} color="#AEEFE1" />
+            </Pressable>
+            <Pressable 
               onPress={() => {
-                setUri(null); 
-              }}
-            />
-            <Button 
-              title="Upload" 
-              onPress={() => {
-                uploadImage(uri);
-                setUri(null); 
-              }}
-            />
+              saveImage(uri);
+              uploadImage(uri);
+              setUri(null); 
+            }}>
+              <Feather name="upload-cloud" size={32} color="#AEEFE1" />
+            </Pressable>
           </View>       
         </View>
       );
@@ -171,7 +190,7 @@ export default function App() {
 const styles = StyleSheet.create({
   container: {
     flex: 1,
-    backgroundColor: "#fff",
+    backgroundColor: "#51101E",
     alignItems: "center",
     justifyContent: "center",
   },
